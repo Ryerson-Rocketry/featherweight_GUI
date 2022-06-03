@@ -27,13 +27,18 @@ def center_map(n_clicks):
 
 @app.callback(Output('map', 'children'), Input('interval-component', 'n_intervals'))
 def update_map(n):
-    fw.read_gps()
+    
+    data = fw.read_gps()
+    if (print_data == True):
+        fw.print_gps(data)
+    
+    
     return [dl.TileLayer(), dl.Polyline(positions=fw.pos_list)]
 
 
 if __name__ == '__main__':
     from sys import argv
-
+    print_data = True
     args = argv[1:]
 
     if args == []:
@@ -47,4 +52,4 @@ if __name__ == '__main__':
         print(f"Error: {e}")
         exit(1)
 
-    app.run(debug=True)
+    app.run(debug=False) #debug=False enables writes to .txt file 
