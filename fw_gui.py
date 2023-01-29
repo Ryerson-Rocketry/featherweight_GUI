@@ -19,7 +19,7 @@ app.layout = html.Div(
     style={'width': '100%', 'height': '98vh', 'margin': "auto", "display": "block", "position": "relative"})
 )
 
-
+#plotting functions:
 @app.callback(Output('map', 'center'), Output('map', 'zoom'), Input('button', 'n_clicks'))
 def center_map(n_clicks):
     return [[0, 0], 5] if n_clicks == 0 else [fw.last_pos(), 15]
