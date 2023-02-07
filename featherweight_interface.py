@@ -2,6 +2,7 @@ import datetime
 import random
 from time import sleep
 import serial
+
 # from geojson import LineString, Feature, FeatureCollection
 
 
@@ -40,7 +41,7 @@ class Featherweight:
                 name.append(splited[0])
                 value.append(splited[1])
             
-            # making sure value for fix # is just and integer and does not include characters 
+            # making sure value for fix # is just an integer and does not include characters 
             num = ""
             for c in value[13]:
                 if c.isdigit():
