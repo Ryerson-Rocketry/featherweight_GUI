@@ -52,8 +52,8 @@ class Featherweight:
             specificData = [7,8,10,12,13]
 
             for j in specificData:
-                print(eval(name[j]))
-                print(eval(value[j]))
+                name[j] = name[j][2:-1]
+                value[j]=(eval(value[j])
 
             # close file
             f.close()
