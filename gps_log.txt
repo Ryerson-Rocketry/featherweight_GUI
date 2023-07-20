@@ -279,3 +279,5 @@
 {'Year': '2023', 'Month': '6', 'Day': '7', 'Time': '16:24:02', 'Device': 'MOCK_GPS', 'Name': 'MOCK_NAME', 'Altitude': '73.5', 'Latitude': '43.69726922033605', 'Longitude': '-79.40156306850304', 'Heading': '193', 'Horizontal Velocity': '46', 'Upward Velocity': '36', 'Fix Type': '0', 'Fix #': '14'}
 {'Year': '2023', 'Month': '6', 'Day': '7', 'Time': '16:24:03', 'Device': 'MOCK_GPS', 'Name': 'MOCK_NAME', 'Altitude': '73.1', 'Latitude': '43.68751124481454', 'Longitude': '-79.40564569307506', 'Heading': '128', 'Horizontal Velocity': '96', 'Upward Velocity': '24', 'Fix Type': '2', 'Fix #': '85'}
 {'Year': '2023', 'Month': '6', 'Day': '7', 'Time': '16:24:04', 'Device': 'MOCK_GPS', 'Name': 'MOCK_NAME', 'Altitude': '78.9', 'Latitude': '43.677740163504495', 'Longitude': '-79.4029814296647', 'Heading': '91', 'Horizontal Velocity': '40', 'Upward Velocity': '30', 'Fix Type': '1', 'Fix #': '56'}
+
+ - log generated on 2023-07-13T15:02:52.184031:
