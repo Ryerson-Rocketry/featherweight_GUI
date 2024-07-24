@@ -1,7 +1,10 @@
+from ctypes import Union
 import datetime
 import random
 from time import sleep
 import serial
+import sys,os
+# from geojson import LineString, Feature, FeatureCollection
 
 
 class Featherweight:
@@ -13,59 +16,23 @@ class Featherweight:
         'Horizontal Velocity': 17, 'Heading': 18, 'Upward Velocity': 19,
         'Fix Type': 21, 'Fix #': 23
     }
-
     _ser: serial.Serial
 
-    def __init__(self, port: str, log_name: str = 'gps_log.txt'):
+    def __init__(self, port: str, log_name: str = 'gps_log.txt',first_name: str = 'first_stage.txt',second_name: str = 'second_stage.txt'):
         self._data_log: list = []
-        self._data_log2: list = []
-
+        self._data_first_stage: list =[]
+        self._data_second_stage: list =[]
         self._pos_list: list = []
-        self._pos_list2: list = []
-
         self._log_name: str  = log_name
-
-        #readFile()
-        with open('gps_log.txt', encoding='utf8') as f:
-            # read all contents of a file
-            content = f.readlines()[-1]
-
-            # seperate content into data needed (each name and its value)
-            data = content.split(',')
-            name = []
-            value = []
-
-            # split the data further into a name array and value array
-            for i in data:
-
-                splited = i.split(':')
-
-                name.append(splited[0])
-                value.append(splited[1])
-            
-            # making sure value for fix # is just an integer and does not include characters 
-            num = ""
-            for c in value[13]:
-                if c.isdigit():
-                    num = num + c
-            value[13] = num
-
-            # print each name and its value seperately
-            specificData = [7,8,10,12,13]
-
-            for j in specificData:
-                name[j] = name[j][2:-1]
-                value[j]=eval(value[j])
-
-            # close file
-            f.close()
-        #self._ser.print(content)
-        #print(content)
-        #close file before appending starts
-
+        self._log_trk1: str = open(first_name, 'a')
+        self._log_trk2: str = open(second_name, 'a')
         self._log_file = open(self._log_name, 'a')
         self._datetime = datetime.datetime
-   
+        self.freq = None
+        # self._geojsonLine: LineString = LineString([])
+        # self._geojsonFormat = FeatureCollection([
+        #     Feature(geometry=self._geojsonLine, properties={
+        #             "scalerank": 5, "featurecla": "GPS Track"})])
         if port == 'mock':
             self._is_mock = True
             self._ser = None
@@ -73,72 +40,43 @@ class Featherweight:
 
         self._is_mock = False
         self._ser = serial.Serial(
-            port, 115200,  stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE)
+            port, 115200, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE)
         self._ser.flushInput()
 
-    #def readFile():
 
     def read_gps(self, retries: int = 10) -> dict:
-        """
-        summary: 
-                reads data that starts with @GPS_stat, parses and then logs it into an array for futture use
-        
-        parameters: 
-            retries: (an int) number of times it waits to try and read serial data
-        
-        return: 
-           a copy of the last logged string
-        
-        """
         for i in range(retries):
             if self._is_mock:
+                self.freq=0
                 data = self._mock()
-                
                 break
 
             line = self._ser.readline()
-
             if line.startswith(b'@ GPS_STAT'):
                 data = self._parse_gps(line)
                 break
+            if line.startswith(b'@ RX_NOMTK'):
+                try:
+                    print(self._parse_freq(line))
+                except :
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print(exc_type, fname, exc_tb.tb_lineno)
         else:
             return None
 
         self._log_data(data)
         return self._data_log[-1].copy()
-    
+
     def _log_data(self, data: dict) -> None:
-            """
-            
-        summary: 
-                appends the incoming data string into an data log array  as well as its position 
-        
-        parameters: 
-           data: (a dict) the logged serial data         
-        return:
-
-           none
-            
-            
-            """
-    
-            self._data_log.append(data)
-            self._pos_list.append([float(data['Latitude']), float(data['Longitude'])])
-
-
-
+        self._data_log.append(data)
+        if data['Name']=='booster':
+            self._data_first_stage.append(data)
+        elif data['Name']=='sustainer':
+            self._data_second_stage.append(data)
+        self._pos_list.append([float(data['Latitude']), float(data['Longitude'])])
 
     def _parse_gps(self, line: bytes) -> dict:
-        """
-        summary: 
-                decodes serial string data using utf-8,  and splits into key elements needed  
-        
-        parameters: 
-           line: (bytes)         
-        return: 
-          data 
-        
-        """
         # decode line as utf-8 and split by ' ' and remove empty strings
         line = line.decode('utf-8').split(' ')
         line = [x for x in line if x != '']
@@ -147,6 +85,12 @@ class Featherweight:
         for key, index in self.gps_format.items():
             data[key] = line[index]
         return data
+    
+    def _parse_freq(self, line: bytes) -> float:
+        line =line.decode('utf-8').split(' ')
+        line = [x for x in line if x != '']
+        self.freq = float(line[30])/1000000
+        return self.freq
 
     def last_pos(self, long_first=False) -> list:
         if len(self._data_log) == 0:
@@ -156,44 +100,32 @@ class Featherweight:
         if long_first:
             pos.reverse()
         return pos
+    
 
     @staticmethod
     def print_gps(data: dict) -> None:
-        """
-         prints in format:
-        
-        year/month/day time 
-        device name
-
-        ALT:altitude, 
-        LAT: latitude, 
-        LON longitude
-        VEL: horizontal velocity,
-         HDG: heading, 
-         Z_VEL: upward velocity
-        FIX: fix type, FIX_NUM: fix number
-        """
+        # print in format:
+        # year/month/day time device name
+        # ALT:altitude, LAT: latitude, LON longitude
+        # VEL: horizontal velocity, HDG: heading, Z_VEL: upward velocity
+        # FIX: fix type, FIX_NUM: fix number
         print('GPS:')
-        print(
-            f'{data["Year"]}/{data["Month"]}/{data["Day"]} {data["Time"]} :: {data["Device"]} {data["Name"]}')
-        print(
-            f'LAT: {data["Latitude"]}, LON: {data["Longitude"]}, ALT: {data["Altitude"]}')
-        print(
-            f'VEL: {data["Horizontal Velocity"]}, HDG: {data["Heading"]}, Z_VEL: {data["Upward Velocity"]}')
-        print(f'FIX: {data["Fix Type"]}, FIX_NUM: {data["Fix #"]}')
-        print('\n')
+        try:
+            print(
+                f'{data["Year"]}/{data["Month"]}/{data["Day"]} {data["Time"]} :: {data["Device"]} {data["Name"]}')
+            print(
+                f'LAT: {data["Latitude"]}, LON: {data["Longitude"]}, ALT: {data["Altitude"]}')
+            print(
+                f'VEL: {data["Horizontal Velocity"]}, HDG: {data["Heading"]}, Z_VEL: {data["Upward Velocity"]}')
+            print(f'FIX: {data["Fix Type"]}, FIX_NUM: {data["Fix #"]}')
+            print('\n')
+        except:
+            print("Nonetype")
+         
 
     def _mock(self) -> dict:
-        """
-        summary: 
-            generates mock data within appropriate ranges for application testing purposes 
-        
-        parameters: 
-            
-        
-        return: 
-            return a mock gps data with a radndom altitude, latitude, and longitude offset        
-        """
+        # return a mock gps data with a radndom altitude, latitude, and longitude offset
+
         # get current time
         now = datetime.datetime.now()
 
@@ -227,34 +159,29 @@ class Featherweight:
             'Fix Type': str(random.randint(0, 3)),
             'Fix #': str(random.randint(0, 100))
         }
+
     def _close(self) -> None:
-        """
-            closes serial port
-        
-        """
         if self._ser is not None:
             self._ser.close()
-        print("dumping and closing log file\n")
-
         self.dump()
         self._log_file.close()
 
     def dump(self):
-        """
-        adds a timestamp to the .txt log file in isoformat and writes number of iterations as well 
-        
-        """
         self._log_file.write(f'\n - log generated on {self._datetime.now().isoformat()}:\n')
         for i in self._data_log:
             self._log_file.write(f'{i.__str__()}\n')
+        for j in self._data_first_stage:
+            self._log_trk1.write(f'{j.__str__()}\n')
+        for k in self._data_second_stage:
+            self._log_trk2.write(f'{k.__str__()}\n') 
+
+    # @property
+    # def geojson(self) -> str:
+    #     return self._geojsonFormat.__str__()
 
     @property
     def pos_list(self) -> list:
-        """
-        returns the position of elements in the list of GPS data
-        """
         return self._pos_list.copy()
-   
 
     def __del__(self):
         self._close()

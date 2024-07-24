@@ -1,0 +1,2 @@
+{'Year': '0000', 'Month': '00', 'Day': '00', 'Time': '00:16:15.307', 'Device': 'TRK', 'Name': 'booster', 'Altitude': '004040', 'Latitude': '+32.32058', 'Longitude': '-106.74833', 'Horizontal Velocity': '+0000', 'Heading': '+068', 'Upward Velocity': '+0000', 'Fix Type': '3', 'Fix #': '17'}
+{'Year': '0000', 'Month': '00', 'Day': '00', 'Time': '00:16:16.305', 'Device': 'TRK', 'Name': 'booster', 'Altitude': '004041', 'Latitude': '+32.32058', 'Longitude': '-106.74833', 'Horizontal Velocity': '+0000', 'Heading': '+035', 'Upward Velocity': '+0000', 'Fix Type': '3', 'Fix #': '17'}
